@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const refreshBtn = document.getElementById('refresh-btn');
+    const exportCsvBtn = document.getElementById('export-csv-btn');
     const refreshSpinner = document.getElementById('refresh-spinner');
     const lastUpdatedText = document.getElementById('last-updated-text');
     const timelineLoading = document.getElementById('timeline-loading');
@@ -26,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Global state
     let selectedUpdate = null;
+    let allReleases = [];
     const progressRingCircumference = 88; // 2 * pi * r (r=14)
 
     // Parse the XML content into structured selectable items
@@ -124,17 +126,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Add the inner HTML structure
                 itemDiv.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                         <span class="badge" style="background: rgba(139, 92, 246, 0.1); color: var(--accent-purple); border: 1px solid rgba(139, 92, 246, 0.2);">${item.category}</span>
+                        <button class="copy-item-btn" title="Copiar al portapapeles" style="background: transparent; padding: 4px; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: color 0.2s;">
+                            <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2005/svg">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                        </button>
                     </div>
                     <div>${item.html}</div>
                     <div class="item-selector-indicator"></div>
                 `;
                 
+                // Attach copy item event listener
+                const copyItemBtn = itemDiv.querySelector('.copy-item-btn');
+                copyItemBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation(); // Prevent selecting the card
+                    try {
+                        await navigator.clipboard.writeText(item.text);
+                        showToast('¡Texto de la actualización copiado!');
+                        const originalColor = copyItemBtn.style.color;
+                        copyItemBtn.style.color = 'var(--success)';
+                        setTimeout(() => {
+                            copyItemBtn.style.color = originalColor;
+                        }, 1500);
+                    } catch (err) {
+                        showToast('Error al copiar', true);
+                    }
+                });
+
                 // Clicking select item
                 itemDiv.addEventListener('click', (e) => {
-                    // Prevent text selection inside links from selecting card if user clicked a link
-                    if (e.target.tagName === 'A') return;
+                    // Prevent text selection inside links/buttons from selecting card if user clicked a link/button
+                    if (e.target.tagName === 'A' || e.target.closest('.copy-item-btn')) return;
                     
                     selectUpdateItem(itemDiv, item);
                 });
@@ -261,6 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             
             if (data.status === 'success') {
+                allReleases = data.releases;
                 renderReleases(data.releases);
                 lastUpdatedText.textContent = `Last synced: ${data.last_fetched}`;
                 
@@ -311,6 +337,43 @@ document.addEventListener('DOMContentLoaded', () => {
         const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
         window.open(twitterUrl, '_blank', 'noopener,noreferrer');
     });
+
+    // Export all releases to CSV
+    function exportToCSV() {
+        if (!allReleases || allReleases.length === 0) {
+            showToast('No hay datos disponibles para exportar', true);
+            return;
+        }
+
+        let csvRows = [];
+        // CSV Header
+        csvRows.push('"Date","Category","Update"');
+
+        allReleases.forEach(release => {
+            const items = parseContentToItems(release.content, release.title);
+            items.forEach(item => {
+                const escapedText = item.text.replace(/"/g, '""');
+                const escapedCategory = item.category.replace(/"/g, '""');
+                const escapedDate = item.date.replace(/"/g, '""');
+                csvRows.push(`"${escapedDate}","${escapedCategory}","${escapedText}"`);
+            });
+        });
+
+        const csvString = csvRows.join("\n");
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "bigquery_release_notes.csv");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('¡Archivo CSV descargado con éxito!');
+    }
+
+    // Event listener for CSV Export
+    exportCsvBtn.addEventListener('click', exportToCSV);
 
     // Initial Load
     fetchReleases();
