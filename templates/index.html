@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BigQuery Release Notes Tracker</title>
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Background glow gradients for premium dark visual aesthetic -->
+    <div class="glow-bg glow-blue"></div>
+    <div class="glow-bg glow-purple"></div>
+
+    <div class="container">
+        <!-- Header Section -->
+        <header class="glass-panel main-header">
+            <div class="header-logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2005/svg">
+                        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1>BigQuery Release Notes</h1>
+                    <p class="subtitle">Monitor official Google Cloud updates & share them seamlessly</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="last-updated-wrapper">
+                    <span class="status-indicator online"></span>
+                    <span id="last-updated-text">Not updated yet</span>
+                </div>
+                <button id="refresh-btn" class="primary-btn" aria-label="Refresh release notes">
+                    <svg class="icon spinner-icon" id="refresh-spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2005/svg">
+                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.73-2.62" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Refresh Feed</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Grid -->
+        <main class="content-grid">
+            <!-- Timeline / Release List Section -->
+            <section class="timeline-section">
+                <h2 class="section-title">Timeline</h2>
+                
+                <!-- Loading State -->
+                <div id="timeline-loading" class="loading-state glass-panel">
+                    <div class="pulse-spinner"></div>
+                    <p>Fetching the latest BigQuery release notes...</p>
+                </div>
+
+                <!-- Error State -->
+                <div id="timeline-error" class="error-state glass-panel hidden">
+                    <svg class="error-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2005/svg">
+                        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2"/>
+                        <path d="M12 8V12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <circle cx="12" cy="16" r="1" fill="currentColor"/>
+                    </svg>
+                    <p id="error-message">Could not load release notes feed. Please try again.</p>
+                    <button id="retry-btn" class="secondary-btn">Retry Connection</button>
+                </div>
+
+                <!-- Release Notes Container -->
+                <div id="release-notes-container" class="release-list">
+                    <!-- Dynamic entries will be inserted here -->
+                </div>
+            </section>
+
+            <!-- Sidebar / Tweet Builder Section -->
+            <aside class="sidebar-section">
+                <div class="sticky-sidebar">
+                    <h2 class="section-title">Tweet Composer</h2>
+                    
+                    <div class="glass-panel tweet-composer-panel">
+                        <!-- Empty State -->
+                        <div id="tweet-empty-state" class="composer-empty">
+                            <div class="empty-icon">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2005/svg">
+                                    <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <h3>No Update Selected</h3>
+                            <p>Click on any list item or sub-update in the timeline to compose a tweet.</p>
+                        </div>
+
+                        <!-- Composer Active State -->
+                        <div id="tweet-active-state" class="composer-active hidden">
+                            <div class="composer-header">
+                                <span class="badge selected-badge">Selected Item</span>
+                                <button id="clear-selection-btn" class="text-btn">Clear</button>
+                            </div>
+                            
+                            <div class="selected-text-preview" id="selected-text-preview">
+                                <!-- Truncated/Raw HTML select update shown here -->
+                            </div>
+
+                            <div class="composer-form">
+                                <label for="tweet-textarea" class="field-label">Edit Tweet Text</label>
+                                <textarea id="tweet-textarea" rows="5" maxlength="400" placeholder="What's happening?"></textarea>
+                                
+                                <div class="composer-meta">
+                                    <div class="character-counter">
+                                        <svg class="progress-ring" width="36" height="36">
+                                            <circle class="progress-ring-bg" stroke="#1e293b" stroke-width="3" fill="transparent" r="14" cx="18" cy="18"/>
+                                            <circle id="progress-ring-bar" class="progress-ring-bar" stroke="#3b82f6" stroke-width="3" fill="transparent" r="14" cx="18" cy="18"/>
+                                        </svg>
+                                        <span id="char-count-text">0 / 280</span>
+                                    </div>
+                                    <span id="char-warning" class="warning-text hidden">Exceeds standard 280-char limit</span>
+                                </div>
+
+                                <div class="action-buttons">
+                                    <button id="copy-tweet-btn" class="secondary-btn flex-btn">
+                                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2005/svg">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/>
+                                        </svg>
+                                        <span id="copy-btn-text">Copy</span>
+                                    </button>
+                                    <button id="send-tweet-btn" class="tweet-btn flex-btn">
+                                        <!-- Custom X Logo -->
+                                        <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2005/svg">
+                                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                                        </svg>
+                                        <span>Tweet</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Notification Toast for feedback -->
+    <div id="toast" class="toast hidden">
+        <span id="toast-message">Copied to clipboard!</span>
+    </div>
+
+    <!-- Main JavaScript Logic -->
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
