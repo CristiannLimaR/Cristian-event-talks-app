@@ -2,6 +2,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const refreshBtn = document.getElementById('refresh-btn');
     const exportCsvBtn = document.getElementById('export-csv-btn');
+    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+    const themeSunIcon = document.querySelector('.theme-sun');
+    const themeMoonIcon = document.querySelector('.theme-moon');
     const refreshSpinner = document.getElementById('refresh-spinner');
     const lastUpdatedText = document.getElementById('last-updated-text');
     const timelineLoading = document.getElementById('timeline-loading');
@@ -374,6 +377,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Event listener for CSV Export
     exportCsvBtn.addEventListener('click', exportToCSV);
+
+    // Toggle Light and Dark Mode
+    themeToggleBtn.addEventListener('click', () => {
+        const isLight = document.body.classList.toggle('light-mode');
+        if (isLight) {
+            themeSunIcon.classList.remove('hidden');
+            themeMoonIcon.classList.add('hidden');
+            localStorage.setItem('theme', 'light');
+        } else {
+            themeSunIcon.classList.add('hidden');
+            themeMoonIcon.classList.remove('hidden');
+            localStorage.setItem('theme', 'dark');
+        }
+    });
+
+    // Check saved theme preferences on startup
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-mode');
+        themeSunIcon.classList.remove('hidden');
+        themeMoonIcon.classList.add('hidden');
+    }
 
     // Initial Load
     fetchReleases();

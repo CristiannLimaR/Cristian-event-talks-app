@@ -15,6 +15,37 @@
     --error: #ef4444;
 }
 
+body.light-mode {
+    --bg-color: #f1f5f9;
+    --card-bg: rgba(255, 255, 255, 0.7);
+    --border-color: rgba(15, 23, 42, 0.08);
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --accent-blue-glow: rgba(59, 130, 246, 0.15);
+    --accent-purple-glow: rgba(139, 92, 246, 0.15);
+}
+
+body.light-mode .glow-bg {
+    opacity: 0.07;
+}
+
+body.light-mode h1 {
+    background: linear-gradient(to right, #0f172a, #5b21b6) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+}
+
+body.light-mode .tweet-btn {
+    background-color: #0f172a;
+    color: white;
+}
+
+body.light-mode .tweet-btn:hover {
+    background-color: #1e293b;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
